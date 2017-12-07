@@ -197,9 +197,9 @@ describe('CourselistController', () => {
     })
 
     it('should reject with a 400 if there is no item in the list', () => {
-      db.courseList[1].items.splice(0)
+      db.courseList[0].items.splice(0)
       return request(app)
-        .get('/course-lists/4')
+        .get('/course-lists/1')
         .then((res) => {
           res.status.should.equal(400)
           res.body.should.eql({

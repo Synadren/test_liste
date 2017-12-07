@@ -17,9 +17,10 @@ function generateUUID() {
     return uuid;
 };
 
+
+// CREATE NEW COURSELIST
 router.post('/', (req, res, next) => {
 
-  console.log('UUID : ' + generateUUID())
   if (!req.body.name) {
     return next(new BadRequestError('VALIDATION', 'Missing name'))
   }
@@ -33,7 +34,7 @@ router.post('/', (req, res, next) => {
   }
 
   const newCourseList = {
-    id: courseListCollection.length + 1,
+    // id: courseListCollection.length + 1,
     uuid : generateUUID(),
     name,
     items: [],
@@ -46,21 +47,27 @@ router.post('/', (req, res, next) => {
   })
 })
 
-// AJOUTER UN ITEM
-router.post('/:id', (req, res, next) => {
 
-  const itemsList = courseListCollection[req.params.id - 1].items
+// ADD AN ITEM
+router.post('/:uuid', (req, res, next) => {
+
+  const resultIdx = findIndex(courseListCollection, { uuid: +req.params.uuid })
+  if (resultIdx === -1){
+    return next(new NotFoundError())
+  }
+
+  const itemsList = courseListCollection[resultIdx].items
   const newItem = req.body.items
   const resultItem = find(itemsList, {name : newItem});
 
-  if (newItem === "" || newItem === null) {
+  if (!newItem) {
     return next(new BadRequestError('VALIDATION', 'Missing name'))
   } else if (resultItem) {
     return next(new BadRequestError('VALIDATION', 'Name should be unique'))
   } else {
     itemsList.push(
       {
-        id: itemsList.length + 1,
+        // id: itemsList.length + 1,
         uuid : generateUUID(),
         name : newItem,
         done : false,
@@ -71,53 +78,56 @@ router.post('/:id', (req, res, next) => {
   res.json({})
 })
 
-// AFFICHER LES ITEMS D'UNE LISTE
 
-router.get('/:id', (req, res, next) => {
-  /*const resultIdx = _.findIndex(courseListCollection, { id: req.params.id })
+// DISPLAY ITEMS
+router.get('/:uuid', (req, res, next) => {
+
+  const resultIdx = findIndex(courseListCollection, { uuid: +req.params.uuid })
   if (resultIdx === -1){
     return next(new NotFoundError())
-  }*/
+  } else if (courseListCollection[resultIdx].items.length === 0) {
+    return next(new BadRequestError('VALIDATION', 'There should have item in this list'))
+  }
+
+  console.log("TITRE " + courseListCollection[resultIdx].items)
 
   res.json({
-    data: courseListCollection[req.params.id - 1].items
+    data: courseListCollection[resultIdx].items
   })
 })
 
+
 // FLAG ITEMS
+router.post('/:uuid/:uuidItem', (req, res, next) => {
 
-router.post('/:id/:idItem', (req, res, next) => {
-
-
-  /*const resultIdx = findIndex(courseListCollection, { id: req.params.id })
+  const resultIdx = findIndex(courseListCollection, { uuid: +req.params.uuid })
   let resultIdxItem;
 
   if (resultIdx === -1) {
     return next(new NotFoundError())
   } else {
-    resultIdxItem = findIndex(courseListCollection[req.params.id - 1].items, { id: req.params.idItem })
-  }*/
+    resultIdxItem = findIndex(courseListCollection[resultIdx].items, { uuid: +req.params.uuidItem })
+    if (resultIdxItem === - 1) {
+      return next(new NotFoundError())
+    }
+  }
 
-  const itemsList = courseListCollection[req.params.id - 1].items
+  const itemsList = courseListCollection[resultIdx].items
 
-  /*if (resultIdxItem === - 1) {
-    return next(new NotFoundError())
-  } else */
-  if (itemsList[req.params.idItem].done) {
+  if (itemsList[resultIdxItem].done) {
     return next(new BadRequestError('VALIDATION', 'Item is already flagged'))
   } else {
-    itemsList[req.params.idItem - 1].done = true
+    itemsList[resultIdxItem].done = true
   }
 
   res.json({})
 })
 
-// SUPPRIMER LISTE
-router.delete('/:id', (req, res, next) => {
-  // let idURL = { id: req.params.id }
-  const pageId = req.params.id
-  const resultIdx = findIndex(courseListCollection, { id: pageId })
-  // console.log("ID : " + req.params.id)
+
+// DELETE LIST
+router.delete('/:uuid', (req, res, next) => {
+
+  const resultIdx = findIndex(courseListCollection, { uuid: +req.params.uuid })
 
   if (resultIdx === -1) {
     return next(new NotFoundError())
@@ -129,10 +139,11 @@ router.delete('/:id', (req, res, next) => {
   res.json({})
 })
 
+
+// DISPLAY LIST
 router.get('/', (req, res, next) => {
 
   const resultLength = courseListCollection.length
-  console.log("LENGTH : " + resultLength)
   if (resultLength === 0) {
     return next(new NotFoundError())
   }

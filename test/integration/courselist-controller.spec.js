@@ -16,6 +16,7 @@ describe('CourselistController', () => {
   afterEach(() => { courseListFixture.down() })
 
   describe('When I create a courseList (POST /course-lists)', () => {
+
     it('should reject with a 400 when no name is given', () => {
       return request(app).post('/course-lists').then((res) => {
         res.status.should.equal(400)
@@ -45,7 +46,6 @@ describe('CourselistController', () => {
 
     it('should  successfully create a courseList', () => {
       const mockName = 'My New List'
-
       return request(app)
         .post('/course-lists')
         .send({ name: mockName })
@@ -57,7 +57,6 @@ describe('CourselistController', () => {
           const result = find(db.courseList, { name: mockName } )
           result.should.not.be.empty
           result.should.eql({
-            id: res.body.data.id,
             uuid: res.body.data.uuid,
             name: res.body.data.name,
             items: []
@@ -81,14 +80,13 @@ describe('CourselistController', () => {
           })
         })
     })
-    //PB FIND INDEX (retourne toujours -1)
-    xit('should successfully delete courseList', () => {
+
+    it('should successfully delete courseList', () => {
       return request(app)
         .delete('/course-lists/1')
         .then((res) => {
           res.status.should.equal(200)
-          // expect(res.body.data).to.be.an('object')
-          const result = findIndex(db.courseList, { id: 1 } )
+          const result = findIndex(db.courseList, { uuid: 1 } )
           result.should.equal(-1)
         })
     })
@@ -97,11 +95,9 @@ describe('CourselistController', () => {
   describe('When I display courseList (GET)', () => {
 
     it('should reject with 404 if there is no courseList', () => {
-      courseListFixture.down()
-      return request(app) // VIDER LE TABEAU DE LISTE DE COURSE
+      db.courseList.splice(0)
+      return request(app)
         .get('/course-lists')
-        // db.courseList.splice(0)
-        //.delete(db.courseList)
         .then((res) => {
           res.status.should.equal(404)
           res.body.should.eql({
@@ -128,7 +124,7 @@ describe('CourselistController', () => {
 
   describe('When I add a new item in a courseList', () => {
 
-    xit('should reject with 404 when the courseList doesn\'t exist', () => { // PROBLEME FINDINDEX
+    it('should reject with 404 when the courseList doesn\'t exist', () => {
       return request(app)
         .post('/course-lists/3')
         .then((res) => {
@@ -178,7 +174,6 @@ describe('CourselistController', () => {
         .send({items: "Poires"})
         .then((res) => {
           res.status.should.equal(200)
-          //expect(res.body.data).to.be.an('array')
           const result = find(db.courseList[0].items, { name : "Poires" } )
           expect(result).to.be.an('object')
         })
@@ -186,7 +181,8 @@ describe('CourselistController', () => {
   })
 
   describe('When I display items from a list', () => {
-    xit('should reject with a 404 if courseList does not exist', () => { // FIND INDEX
+
+    it('should reject with a 404 if courseList does not exist', () => {
       return request(app)
         .get('/course-lists/3')
         .then((res) => {
@@ -200,16 +196,16 @@ describe('CourselistController', () => {
         })
     })
 
-    xit('should reject with a 400 if there is no item in the list', () => {
+    it('should reject with a 400 if there is no item in the list', () => {
+      db.courseList[1].items.splice(0)
       return request(app)
-        .get('/course-lists/1')
-        //db.courseList[0].items = [] // VIDER LE TABLEAU ITEMS
+        .get('/course-lists/4')
         .then((res) => {
           res.status.should.equal(400)
           res.body.should.eql({
             error: {
               code: 'VALIDATION',
-              message: 'There should have item in this list' /// NE PAS OUBLIER
+              message: 'There should have item in this list'
             }
           })
       })
@@ -229,7 +225,8 @@ describe('CourselistController', () => {
   })
 
   describe('When I have bought an item', () => {
-    xit('should reject with a 404 if courseList does not exist', () => { // FIND INDEX
+
+    it('should reject with a 404 if courseList does not exist', () => {
       return request(app)
         .post('/course-lists/3/1')
         .then((res) => {
@@ -242,7 +239,7 @@ describe('CourselistController', () => {
           })
         })
     })
-    xit('should reject with a 404 if item does not exist', () => { // FIND INDEX
+    it('should reject with a 404 if item does not exist', () => {
       return request(app)
         .post('/course-lists/1/5')
         .then((res) => {
@@ -255,10 +252,10 @@ describe('CourselistController', () => {
           })
         })
     })
-    xit('should reject with a 400 if item is already flaged', () => {
+    it('should reject with a 400 if item is already flagged', () => {
+      db.courseList[0].items[1].done = true
       return request(app)
-        .post('/course-lists/1/1')
-        // Passer le status done à True
+        .post('/course-lists/1/3')
         .then((res) => {
           res.status.should.equal(400)
           res.body.should.eql({
@@ -272,7 +269,7 @@ describe('CourselistController', () => {
 
     it('should successfully flag item', () => {
       return request(app)
-        .post('/course-lists/1/1')
+        .post('/course-lists/1/2')
         .then((res) => {
           res.status.should.equal(200)
           const result = db.courseList[0].items[0].done
@@ -280,6 +277,5 @@ describe('CourselistController', () => {
         })
     })
   })
-
 
 })
